@@ -1,4 +1,4 @@
-import { NextAuthOptions } from "next-auth"
+import { NextAuthOptions, DefaultSession } from "next-auth"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
@@ -62,14 +62,16 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string
+        ;(session as any).user = {
+          ...(session.user as DefaultSession["user"]),
+          id: (token.id as string) || (token.sub as string) || "",
+        }
       }
       return session
     }
   },
   pages: {
     signIn: "/auth/signin",
-    signUp: "/auth/signup",
   },
   secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-development",
 }

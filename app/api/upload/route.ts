@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -59,11 +60,19 @@ export async function POST(request: NextRequest) {
     // Parse the form data
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const galleryId = formData.get('galleryId') as string
+    const galleryId = formData.get('galleryId') as string | null
 
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
+        { status: 400 }
+      )
+    }
+
+    // Enforce a galleryId since Prisma schema requires it
+    if (!galleryId) {
+      return NextResponse.json(
+        { error: 'galleryId is required' },
         { status: 400 }
       )
     }
@@ -119,8 +128,8 @@ export async function POST(request: NextRequest) {
       data: {
         url: s3Url,
         type: mediaType,
-        uploaderId: session.user.id,
-        galleryId: galleryId || null, // Optional gallery association
+        uploaderId: userId,
+        galleryId: galleryId,
       },
       include: {
         uploader: {

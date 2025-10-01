@@ -6,19 +6,20 @@ import { uploadToS3 } from "@/lib/s3"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       )
     }
 
-    const galleryId = params.id
+    const { id: galleryId } = await params
 
     // Validate gallery ID
     if (!galleryId) {
@@ -48,7 +49,7 @@ export async function POST(
     }
 
     // Check if user owns the gallery
-    if (gallery.ownerId !== session.user.id) {
+    if (gallery.ownerId !== userId) {
       return NextResponse.json(
         { error: "Access denied. You can only upload to your own galleries." },
         { status: 403 }
@@ -116,7 +117,7 @@ export async function POST(
       data: {
         url: s3Url,
         type: mediaType,
-        uploaderId: session.user.id,
+        uploaderId: userId,
         galleryId: galleryId,
       },
       include: {

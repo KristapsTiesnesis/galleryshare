@@ -21,9 +21,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <SessionProvider>
-          <Navigation />
-          {children}
-          <Toaster />
+          <Toaster>
+            <Navigation />
+            {children}
+          </Toaster>
         </SessionProvider>
       </body>
     </html>

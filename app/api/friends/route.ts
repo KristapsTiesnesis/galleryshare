@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Get all friends for the current user
     const friendships = await prisma.friend.findMany({
       where: {
-        userId: session.user.id,
+        userId: userId,
       },
       include: {
         user: {

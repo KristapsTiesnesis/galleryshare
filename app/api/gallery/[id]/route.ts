@@ -5,19 +5,20 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       )
     }
 
-    const galleryId = params.id
+    const { id: galleryId } = await params
 
     // Validate gallery ID
     if (!galleryId) {
@@ -67,7 +68,7 @@ export async function GET(
     // Check if user has access to this gallery
     // For now, only the owner can view their gallery
     // Later you might want to add sharing functionality
-    if (gallery.ownerId !== session.user.id) {
+    if (gallery.ownerId !== userId) {
       return NextResponse.json(
         { error: "Access denied. You can only view your own galleries." },
         { status: 403 }

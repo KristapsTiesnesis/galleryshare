@@ -6,7 +6,8 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
@@ -21,14 +22,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Only allow share if sender owns or uploaded the media
-    if (media.uploaderId !== session.user.id) {
+    if (media.uploaderId !== userId) {
       return NextResponse.json({ error: 'Not authorized to share this media' }, { status: 403 })
     }
 
     const share = await prisma.share.create({
       data: {
         mediaId,
-        senderId: session.user.id,
+        senderId: userId,
         recipientId,
       },
     })

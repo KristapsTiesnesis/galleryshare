@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     const gallery = await prisma.gallery.create({
       data: {
         name: name.trim(),
-        ownerId: session.user.id,
+        ownerId: userId,
       },
       include: {
         owner: {

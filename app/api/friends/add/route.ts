@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if trying to add yourself
-    if (friend.id === session.user.id) {
+    if (friend.id === userId) {
       return NextResponse.json(
         { error: "You cannot add yourself as a friend" },
         { status: 400 }
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Check if friendship already exists
     const existingFriendship = await prisma.friend.findFirst({
       where: {
-        userId: session.user.id,
+        userId: userId,
         friendId: friend.id,
       }
     })
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Create the friendship
     const newFriendship = await prisma.friend.create({
       data: {
-        userId: session.user.id,
+        userId: userId,
         friendId: friend.id,
       },
       include: {

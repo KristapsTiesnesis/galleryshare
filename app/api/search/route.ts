@@ -6,7 +6,8 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const userId = (session as any)?.user?.id as string | undefined
+    if (!userId) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
@@ -21,15 +22,15 @@ export async function GET(request: NextRequest) {
         AND: [
           {
             OR: [
-              { name: { contains: q, mode: 'insensitive' } },
-              { email: { contains: q, mode: 'insensitive' } },
+              { name: { contains: q } },
+              { email: { contains: q } },
             ],
           },
           {
             // Only users who are already friends of the requester
             friends: {
               some: {
-                userId: session.user.id,
+                userId: userId,
               },
             },
           },
@@ -42,8 +43,8 @@ export async function GET(request: NextRequest) {
     const galleries = await prisma.gallery.findMany({
       where: {
         AND: [
-          { name: { contains: q, mode: 'insensitive' } },
-          { ownerId: session.user.id },
+          { name: { contains: q } },
+          { ownerId: userId },
         ],
       },
       select: { id: true, name: true },
